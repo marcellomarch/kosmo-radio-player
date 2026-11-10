@@ -1,0 +1,83 @@
+# Builds Kosmo Radio Player on every version tag (v1.2.3) and publishes a
+# GitHub Release with the app, a DMG and the Sparkle appcast.xml that the
+# installed apps poll for updates
+# (SUFeedURL = .../releases/latest/download/appcast.xml).
+#
+# Release notes come from the annotated tag message, one bullet per line:
+#   git tag -a v1.4.0 -m "- New visualizer" -m "- Fixed lyrics for long titles"
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from tag
+        id: v
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          FILE_VERSION="$(cat macos/VERSION)"
+          if [ "${VERSION}" != "${FILE_VERSION}" ]; then
+            echo "::error::Tag ${TAG} does not match macos/VERSION (${FILE_VERSION})"
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build app
+        run: APP_VERSION="${{ steps.v.outputs.version }}" ./macos/build.sh
+
+      - name: Package and write release notes
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent macos/KosmoRadio.app "dist/KosmoRadio-${VERSION}.zip"
+          cp macos/KosmoRadio-Installer.dmg "KosmoRadio-${VERSION}.dmg"
+
+          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          git tag -l --format='%(contents)' "${TAG}" | sed '/^-----BEGIN PGP/,$d' > notes.md
+          [ -s notes.md ] || echo "- Kosmo Radio Player ${VERSION}" > notes.md
+
+          # Same notes as HTML for the Sparkle update window
+          {
+            echo "<ul>"
+            grep -v '^[[:space:]]*$' notes.md | sed -E 's/^[-*][[:space:]]*//; s/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s#.*#<li>&</li>#'
+            echo "</ul>"
+          } > "dist/KosmoRadio-${VERSION}.html"
+
+      - name: Generate signed appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          echo "${SPARKLE_PRIVATE_KEY}" | macos/vendor/Sparkle/bin/generate_appcast \
+            --ed-key-file - \
+            --embed-release-notes \
+            --download-url-prefix "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/" \
+            dist
+          grep -q 'sparkle:edSignature=' dist/appcast.xml
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.v.outputs.version }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          gh release create "${TAG}" \
+            --title "Kosmo Radio Player ${VERSION}" \
+            --notes-file notes.md \
+            "dist/KosmoRadio-${VERSION}.zip" \
+            "KosmoRadio-${VERSION}.dmg" \
+            dist/appcast.xml

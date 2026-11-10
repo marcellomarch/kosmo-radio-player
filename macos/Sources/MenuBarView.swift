@@ -10,6 +10,7 @@ final class MenuBarViewState: ObservableObject {
 struct MenuBarView: View {
     @ObservedObject var player: RadioPlayerManager
     @ObservedObject var l10n = LocalizationManager.shared
+    @ObservedObject var updater = AppUpdater.shared
     @StateObject private var uiState = MenuBarViewState()
     @Environment(\.openWindow) private var openWindow
 
@@ -114,6 +115,20 @@ struct MenuBarView: View {
                     }
                     .menuStyle(.borderlessButton)
                     .fixedSize()
+
+                    Button {
+                        updater.checkForUpdates()
+                    } label: {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!updater.canCheckForUpdates)
+                    .help(l10n.t(
+                        "Controlla aggiornamenti… (versione \(updater.currentVersion))",
+                        "Check for Updates… (version \(updater.currentVersion))"
+                    ))
 
                     Button {
                         NSApplication.shared.terminate(nil)

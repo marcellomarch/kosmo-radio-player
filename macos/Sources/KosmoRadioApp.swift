@@ -5,6 +5,7 @@ import AppKit
 struct KosmoRadioApp: App {
     @StateObject private var player = RadioPlayerManager()
     @ObservedObject private var l10n = LocalizationManager.shared
+    @ObservedObject private var updater = AppUpdater.shared
 
     var body: some Scene {
         Window(
@@ -18,6 +19,14 @@ struct KosmoRadioApp: App {
                 .frame(minWidth: 860, minHeight: 560)
         }
         .defaultSize(width: 1020, height: 680)
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button(l10n.t("Controlla aggiornamenti…", "Check for Updates…")) {
+                    updater.checkForUpdates()
+                }
+                .disabled(!updater.canCheckForUpdates)
+            }
+        }
 
         MenuBarExtra {
             MenuBarView(player: player)
