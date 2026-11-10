@@ -1,3 +1,5 @@
+<p align="center"><img src="macos/Resources/AppIcon-1024.png" width="180" alt="Kosmo Radio Player icon"></p>
+
 # 📻 Kosmo Radio Player
 
 A native macOS internet radio player (SwiftUI + AVFoundation) that lives in your menu bar, with a curated **Rap & Hip-Hop hub**, stations from **Ukraine 🇺🇦** and **New York City 🗽**, and **40,000+ stations from all over the world 🌍** via the open [Radio Browser](https://www.radio-browser.info) catalogue.
