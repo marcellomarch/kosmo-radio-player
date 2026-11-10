@@ -2,8 +2,6 @@
 
 A native macOS internet radio player (SwiftUI + AVFoundation) that lives in your menu bar, with a curated **Rap & Hip-Hop hub**, stations from **Ukraine 🇺🇦** and **New York City 🗽**, and **40,000+ stations from all over the world 🌍** via the open [Radio Browser](https://www.radio-browser.info) catalogue.
 
-Also available as a lightweight **web app (PWA)** for iPhone and other browsers.
-
 ## ✨ Features
 
 - **Menu bar player** with quick tabs: ⭐ Favorites, 🎤 Rap, 🇺🇦 UA, 🗽 NYC.
@@ -29,16 +27,6 @@ open KosmoRadio.app
 `build.sh` compiles a universal binary (Apple Silicon + Intel), ad-hoc signs it and also produces `KosmoRadio-Mac.zip` and `KosmoRadio-Installer.dmg`.
 
 The app is not notarized: on first launch, right-click → **Open**, or run the **Unlock and Open** script included in the DMG.
-
-## 🌐 Web app (PWA)
-
-The `pwa/` folder is a static, single-file web app:
-
-- `index.html` – the player (vanilla JS, no build step)
-- `manifest.json`, `sw.js`, icons – installable on iPhone via **Share → Add to Home Screen**
-- `stream-proxy.php` – optional HTTPS proxy for stations that only stream over plain HTTP (iOS Safari blocks mixed content). It needs PHP with cURL and refuses local/private addresses.
-
-Serve the folder from any HTTPS web server.
 
 ## 🙏 Credits
 
