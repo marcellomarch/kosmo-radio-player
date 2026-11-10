@@ -758,6 +758,8 @@ struct MainWindowView: View {
                         Text("🎤")
                         Text("Lyrics")
                             .font(.system(size: 11.5, weight: .semibold))
+                            .lineLimit(1)
+                            .fixedSize()
                         if !lyricsManager.lyricsText.isEmpty {
                             Circle()
                                 .fill(Color.green)
@@ -788,6 +790,8 @@ struct MainWindowView: View {
                         Text(vizVM.currentPreset.icon)
                         Text("Visualizer")
                             .font(.system(size: 11.5, weight: .semibold))
+                            .lineLimit(1)
+                            .fixedSize()
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)

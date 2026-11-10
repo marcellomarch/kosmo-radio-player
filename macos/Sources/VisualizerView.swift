@@ -3,32 +3,38 @@ import AppKit
 import Combine
 
 enum VisualizerPreset: String, CaseIterable, Identifiable {
-    case milkDropTunnel = "milkdrop"
-    case geissPlasma = "geiss"
+    case hyperspaceTunnel = "tunnel"
+    case laserPlasma = "plasma"
     case acidKaleidoscope = "kaleidoscope"
-    case winampSpectrum = "winamp"
+    case ledSpectrum = "led"
+
+    /// Reads a saved preset, including the identifiers used before 1.3.4.
+    init?(savedValue: String) {
+        let legacy = ["milkdrop": "tunnel", "geiss": "plasma", "winamp": "led"]
+        self.init(rawValue: legacy[savedValue] ?? savedValue)
+    }
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .milkDropTunnel: return "🌀"
-        case .geissPlasma: return "⚡"
+        case .hyperspaceTunnel: return "🌀"
+        case .laserPlasma: return "⚡"
         case .acidKaleidoscope: return "🔮"
-        case .winampSpectrum: return "📊"
+        case .ledSpectrum: return "📊"
         }
     }
 
     func title(isEnglish: Bool) -> String {
         switch self {
-        case .milkDropTunnel:
-            return "MilkDrop Tunnel '01"
-        case .geissPlasma:
-            return "Geiss Laser Plasma"
+        case .hyperspaceTunnel:
+            return isEnglish ? "Hyperspace Tunnel" : "Tunnel Iperspazio"
+        case .laserPlasma:
+            return "Laser Plasma"
         case .acidKaleidoscope:
-            return "iTunes Acid '02"
-        case .winampSpectrum:
-            return isEnglish ? "Winamp Boom Bap LED" : "Winamp LED 2000"
+            return isEnglish ? "Acid Kaleidoscope" : "Caleidoscopio Acido"
+        case .ledSpectrum:
+            return "LED Spectrum 2000"
         }
     }
 }
@@ -37,14 +43,14 @@ enum VisualizerPreset: String, CaseIterable, Identifiable {
 final class VisualizerViewModel: ObservableObject {
     @Published var isExpandedFullWindow: Bool = false
     @Published var isMacNativeFullScreen: Bool = false
-    @Published var currentPreset: VisualizerPreset = .milkDropTunnel {
+    @Published var currentPreset: VisualizerPreset = .hyperspaceTunnel {
         didSet {
             UserDefaults.standard.set(currentPreset.rawValue, forKey: "kosmoradio_viz_preset")
         }
     }
     @Published var showHUD: Bool = true
 
-    // Peak hold state for Winamp spectrum bars
+    // Peak hold state for the LED spectrum bars
     var peakHolds: [Double] = Array(repeating: 0.05, count: 32)
     var peakVelocities: [Double] = Array(repeating: 0.0, count: 32)
     var lastFrameTime: Double = 0
@@ -54,7 +60,7 @@ final class VisualizerViewModel: ObservableObject {
     init() {
         LegacyDefaults.migrateIfNeeded()
         if let saved = UserDefaults.standard.string(forKey: "kosmoradio_viz_preset"),
-           let preset = VisualizerPreset(rawValue: saved) {
+           let preset = VisualizerPreset(savedValue: saved) {
             self.currentPreset = preset
         }
     }
@@ -205,14 +211,70 @@ struct AudioFrameState {
     }
 }
 
-// MARK: - Sidebar Mini-Visor View (Y2K CRT / Winamp Box)
+// MARK: - Sidebar Mini-Visor View (Y2K CRT box)
 
 struct SidebarVisualizerMiniView: View {
     @ObservedObject var player: RadioPlayerManager
     @ObservedObject var vizVM: VisualizerViewModel
     @ObservedObject var l10n = LocalizationManager.shared
+    @ObservedObject var floating = FloatingVisualizerController.shared
+    /// True while the mini visualizer is being dragged out into its own window.
+    @State private var draggingOut = false
 
     var body: some View {
+        if floating.isOpen && !draggingOut {
+            detachedRow
+        } else {
+            miniVisualizer
+        }
+    }
+
+    /// Shown in the sidebar while the visualizer lives in its floating window.
+    private var detachedRow: some View {
+        Button {
+            floating.close()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "pip.enter")
+                Text(l10n.t("Visualizer in finestra · Riaggancia", "Visualizer in its window · Dock back"))
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.accentColor.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+        .help(l10n.t("Chiudi la finestra flottante e rimetti il visualizer qui", "Close the floating window and put the visualizer back here"))
+    }
+
+    private func popOut(at point: NSPoint? = nil) {
+        floating.open(player: player, vizVM: vizVM, centeredAt: point)
+    }
+
+    private var dragOut: some Gesture {
+        DragGesture(minimumDistance: 6, coordinateSpace: .global)
+            .onChanged { value in
+                let distance = hypot(value.translation.width, value.translation.height)
+                if !draggingOut {
+                    guard distance > 40 else { return }
+                    draggingOut = true
+                    popOut(at: NSEvent.mouseLocation)
+                } else {
+                    floating.move(centerTo: NSEvent.mouseLocation)
+                }
+            }
+            .onEnded { _ in
+                draggingOut = false
+            }
+    }
+
+    private var miniVisualizer: some View {
         ZStack {
             VisualizerCanvasView(
                 player: player,
@@ -261,6 +323,20 @@ struct SidebarVisualizerMiniView: View {
 
                     Spacer()
 
+                    // Pop out into a floating always-on-top window
+                    Button {
+                        popOut()
+                    } label: {
+                        Image(systemName: "pip.exit")
+                            .font(.system(size: 9, weight: .bold))
+                            .padding(5)
+                            .background(Color.black.opacity(0.65))
+                            .foregroundStyle(.white)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(l10n.t("Stacca in una finestretta sempre in primo piano", "Pop out into a small always-on-top window"))
+
                     // Expand icon badge
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.up.left.and.arrow.down.right")
@@ -278,7 +354,7 @@ struct SidebarVisualizerMiniView: View {
                 HStack {
                     Text(
                         player.isPlaying
-                            ? l10n.t("CLICCA PER FULL SCREEN", "CLICK FOR FULL SCREEN")
+                            ? l10n.t("CLIC: FULL SCREEN · TRASCINA: STACCA", "CLICK: FULL SCREEN · DRAG: POP OUT")
                             : l10n.t("VISUALIZER Y2K (IN PAUSA)", "Y2K VISUALIZER (PAUSED)")
                     )
                     .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
@@ -299,10 +375,14 @@ struct SidebarVisualizerMiniView: View {
         .padding(.top, 8)
         .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .gesture(dragOut)
         .onTapGesture {
             vizVM.toggleExpanded()
         }
-        .help(l10n.t("Clicca per aprire il Visualizer a Tutto Schermo", "Click to expand Visualizer to Full Screen"))
+        .help(l10n.t(
+            "Clicca per il Visualizer a tutto schermo, trascinalo fuori per staccarlo in una finestretta",
+            "Click for the full-screen Visualizer, drag it out to pop it into a small window"
+        ))
     }
 }
 
@@ -603,22 +683,22 @@ struct VisualizerCanvasView: View {
 
             Canvas { context, size in
                 switch vizVM.currentPreset {
-                case .milkDropTunnel:
-                    drawMilkDropTunnel(context: &context, size: size, frame: frame)
-                case .geissPlasma:
-                    drawGeissPlasma(context: &context, size: size, frame: frame)
+                case .hyperspaceTunnel:
+                    drawHyperspaceTunnel(context: &context, size: size, frame: frame)
+                case .laserPlasma:
+                    drawLaserPlasma(context: &context, size: size, frame: frame)
                 case .acidKaleidoscope:
                     drawAcidKaleidoscope(context: &context, size: size, frame: frame)
-                case .winampSpectrum:
-                    drawWinampSpectrum(context: &context, size: size, frame: frame)
+                case .ledSpectrum:
+                    drawLEDSpectrum(context: &context, size: size, frame: frame)
                 }
             }
         }
     }
 
-    // MARK: 1. MilkDrop Cyber Tunnel (2001)
+    // MARK: 1. Hyperspace Tunnel
 
-    private func drawMilkDropTunnel(
+    private func drawHyperspaceTunnel(
         context: inout GraphicsContext,
         size: CGSize,
         frame: AudioFrameState
@@ -713,9 +793,9 @@ struct VisualizerCanvasView: View {
         )
     }
 
-    // MARK: 2. Geiss Plasma & Laser Scope (1999)
+    // MARK: 2. Laser Plasma & Scope
 
-    private func drawGeissPlasma(
+    private func drawLaserPlasma(
         context: inout GraphicsContext,
         size: CGSize,
         frame: AudioFrameState
@@ -789,7 +869,7 @@ struct VisualizerCanvasView: View {
         }
     }
 
-    // MARK: 3. iTunes 2001 Acid Kaleidoscope
+    // MARK: 3. Acid Kaleidoscope
 
     private func drawAcidKaleidoscope(
         context: inout GraphicsContext,
@@ -863,14 +943,14 @@ struct VisualizerCanvasView: View {
         }
     }
 
-    // MARK: 4. Winamp 2000 Boom Bap LED Spectrum + Oscilloscope
+    // MARK: 4. LED Spectrum + Oscilloscope
 
-    private func drawWinampSpectrum(
+    private func drawLEDSpectrum(
         context: inout GraphicsContext,
         size: CGSize,
         frame: AudioFrameState
     ) {
-        // Classic Winamp dark metallic CRT background + grid
+        // Dark metallic CRT background + grid
         context.fill(
             Path(CGRect(origin: .zero, size: size)),
             with: .linearGradient(
@@ -893,7 +973,7 @@ struct VisualizerCanvasView: View {
             context.stroke(line, with: .color(Color.white.opacity(0.05)), lineWidth: 1)
         }
 
-        // Top Oscilloscope Wave (Cyan/Green Winamp style)
+        // Top Oscilloscope Wave (cyan/green)
         var scope = Path()
         let scopeCenterY = size.height * 0.22
         let scopeAmp = size.height * 0.14
@@ -938,7 +1018,7 @@ struct VisualizerCanvasView: View {
 
                 let segColor: Color
                 if frac < 0.55 {
-                    segColor = Color(red: 0.15, green: 0.92, blue: 0.38) // Classic Winamp Green
+                    segColor = Color(red: 0.15, green: 0.92, blue: 0.38) // Classic LED green
                 } else if frac < 0.80 {
                     segColor = Color(red: 1.0, green: 0.82, blue: 0.12) // Yellow/Amber
                 } else {
