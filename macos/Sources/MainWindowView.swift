@@ -4,7 +4,7 @@ import Combine
 
 @MainActor
 final class MainWindowViewModel: ObservableObject {
-    @Published var selectedSection: SidebarSection = .hipHop(.all)
+    @Published var selectedSection: SidebarSection = ListenerProfile.shared.homeSection
     @Published var searchText: String = ""
     @Published var remoteStations: [RadioStation] = []
     @Published var isLoadingRemote: Bool = false
@@ -14,7 +14,7 @@ final class MainWindowViewModel: ObservableObject {
     private var searchTask: Task<Void, Never>? = nil
 
     init() {
-        loadSectionData(for: .hipHop(.all), query: "")
+        loadSectionData(for: selectedSection, query: "")
     }
 
     func onSectionChanged(_ newSection: SidebarSection) {
@@ -38,18 +38,12 @@ final class MainWindowViewModel: ObservableObject {
         case .favorites:
             isLoadingRemote = false
             return
-        case .hipHop(let subgenre):
-            fetchRemote(query: trimmed, countryCode: nil, state: nil, tag: subgenre.searchTag)
-        case .ukraine:
-            fetchRemote(query: trimmed, countryCode: "UA", state: nil, tag: nil)
-        case .newYork:
-            fetchRemote(query: trimmed, countryCode: "US", state: "New York", tag: nil)
+        case .style(let sub):
+            fetchRemote(query: trimmed, countryCode: nil, state: nil, tag: sub.tag)
+        case .place(let place):
+            fetchRemote(query: trimmed, countryCode: place.countryCode, state: place.state, tag: nil)
         case .worldSearch:
             fetchRemote(query: trimmed, countryCode: nil, state: nil, tag: nil)
-        case .country(_, _, let code, _):
-            fetchRemote(query: trimmed, countryCode: code, state: nil, tag: nil)
-        case .genre(_, _, let tag, _):
-            fetchRemote(query: trimmed, countryCode: nil, state: nil, tag: tag)
         }
     }
 
@@ -86,28 +80,7 @@ struct MainWindowView: View {
     @StateObject private var vm = MainWindowViewModel()
     @StateObject private var vizVM = VisualizerViewModel()
 
-    private let worldCountries: [(nameIT: String, nameEN: String, code: String, flag: String)] = [
-        ("Ucraina (Catalogo Completo)", "Ukraine (Full Directory)", "UA", "🇺🇦"),
-        ("Stati Uniti", "United States", "US", "🇺🇸"),
-        ("Italia", "Italy", "IT", "🇮🇹"),
-        ("Regno Unito", "United Kingdom", "GB", "🇬🇧"),
-        ("Francia", "France", "FR", "🇫🇷"),
-        ("Germania", "Germany", "DE", "🇩🇪"),
-        ("Giappone", "Japan", "JP", "🇯🇵"),
-        ("Brasile", "Brazil", "BR", "🇧🇷"),
-        ("Spagna", "Spain", "ES", "🇪🇸"),
-        ("Polonia", "Poland", "PL", "🇵🇱")
-    ]
-
-    private let otherGenres: [(nameIT: String, nameEN: String, tag: String, icon: String)] = [
-        ("R&B, Soul & Funk", "R&B, Soul & Funk", "rnb", "🎶"),
-        ("Jazz & Blues", "Jazz & Blues", "jazz", "🎷"),
-        ("News & Attualità", "News & Talk", "news", "🗞️"),
-        ("Classica & Opera", "Classical & Opera", "classical", "🎻"),
-        ("Rock & Indie", "Rock & Indie", "rock", "🎸"),
-        ("Electronic & House", "Electronic & House", "electronic", "🎧"),
-        ("Ambient & Chill", "Ambient & Chill", "ambient", "🌙")
-    ]
+    @ObservedObject var profile = ListenerProfile.shared
 
     var body: some View {
         ZStack {
@@ -135,6 +108,11 @@ struct MainWindowView: View {
                 Divider()
 
                 bottomPlayerBar
+            }
+            .sheet(isPresented: $profile.isOnboardingPresented) {
+                OnboardingView(player: player) {
+                    vm.selectedSection = profile.homeSection
+                }
             }
 
             if vizVM.isExpandedFullWindow {
@@ -178,38 +156,13 @@ struct MainWindowView: View {
                     }
                 }
 
-                NavigationLink(value: SidebarSection.hipHop(.all)) {
-                    Label {
-                        HStack {
-                            Text("Hip-Hop & Rap Hub")
-                                .fontWeight(.medium)
-                            Spacer()
-                            Text("HOT")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 1.5)
-                                .background(Color.orange)
-                                .clipShape(Capsule())
+                ForEach(profile.places) { place in
+                    NavigationLink(value: SidebarSection.place(place)) {
+                        Label {
+                            Text(place.name(isEnglish: l10n.isEnglish))
+                        } icon: {
+                            Text(place.flag)
                         }
-                    } icon: {
-                        Text("🎤")
-                    }
-                }
-
-                NavigationLink(value: SidebarSection.ukraine) {
-                    Label {
-                        Text(l10n.t("Ucraina (Selezione)", "Ukraine (Curated)"))
-                    } icon: {
-                        Text("🇺🇦")
-                    }
-                }
-
-                NavigationLink(value: SidebarSection.newYork) {
-                    Label {
-                        Text("New York City")
-                    } icon: {
-                        Text("🗽")
                     }
                 }
 
@@ -221,51 +174,44 @@ struct MainWindowView: View {
                 }
             }
 
-            Section(l10n.t("🎤 Focus Rap & Hip-Hop", "🎤 Rap & Hip-Hop Focus")) {
-                ForEach(HipHopSubgenre.allCases) { sub in
-                    NavigationLink(value: SidebarSection.hipHop(sub)) {
-                        Label {
-                            Text(sub.title(isEnglish: l10n.isEnglish))
-                        } icon: {
-                            Text(sub.icon)
+            ForEach(profile.families) { family in
+                let name = family.title(isEnglish: l10n.isEnglish)
+                Section(l10n.t("\(family.icon) Focus \(name)", "\(family.icon) \(name) Focus")) {
+                    ForEach(family.subgenres) { sub in
+                        NavigationLink(value: SidebarSection.style(sub)) {
+                            Label {
+                                Text(sub.title(isEnglish: l10n.isEnglish))
+                            } icon: {
+                                Text(sub.icon)
+                            }
                         }
                     }
                 }
             }
 
-            Section(l10n.t("Altri Generi Musicali", "Other Music Genres")) {
-                ForEach(otherGenres, id: \.tag) { item in
-                    NavigationLink(
-                        value: SidebarSection.genre(
-                            nameIT: item.nameIT,
-                            nameEN: item.nameEN,
-                            tag: item.tag,
-                            icon: item.icon
-                        )
-                    ) {
+            Section(
+                profile.families.isEmpty
+                    ? l10n.t("Generi Musicali", "Music Genres")
+                    : l10n.t("Altri Generi Musicali", "Other Music Genres")
+            ) {
+                ForEach(profile.otherFamilies) { family in
+                    NavigationLink(value: SidebarSection.style(family.all)) {
                         Label {
-                            Text(l10n.isEnglish ? item.nameEN : item.nameIT)
+                            Text(family.title(isEnglish: l10n.isEnglish))
                         } icon: {
-                            Text(item.icon)
+                            Text(family.icon)
                         }
                     }
                 }
             }
 
             Section(l10n.t("Esplora per Paese", "Explore by Country")) {
-                ForEach(worldCountries, id: \.code) { item in
-                    NavigationLink(
-                        value: SidebarSection.country(
-                            nameIT: item.nameIT,
-                            nameEN: item.nameEN,
-                            code: item.code,
-                            flag: item.flag
-                        )
-                    ) {
+                ForEach(profile.otherPlaces) { place in
+                    NavigationLink(value: SidebarSection.place(place)) {
                         Label {
-                            Text(l10n.isEnglish ? item.nameEN : item.nameIT)
+                            Text(place.name(isEnglish: l10n.isEnglish))
                         } icon: {
-                            Text(item.flag)
+                            Text(place.flag)
                         }
                     }
                 }
@@ -277,6 +223,19 @@ struct MainWindowView: View {
                 Divider()
 
                 SidebarVisualizerMiniView(player: player, vizVM: vizVM)
+
+                Button {
+                    profile.isOnboardingPresented = true
+                } label: {
+                    Label(
+                        l10n.t("Personalizza generi e paesi…", "Personalize genres & countries…"),
+                        systemImage: "slider.horizontal.3"
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .font(.system(size: 12, weight: .medium))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 14)
 
                 Button {
                     vm.showAddCustomSheet = true
@@ -375,14 +334,15 @@ struct MainWindowView: View {
                     .buttonStyle(.bordered)
                 }
 
-                // If inside Hip-Hop & Rap Hub, show quick subgenre pills!
-                if case .hipHop(let activeSubgenre) = vm.selectedSection {
+                // Inside a genre family, show quick subgenre pills
+                if case .style(let activeSubgenre) = vm.selectedSection,
+                   let family = Catalog.family(id: activeSubgenre.familyID) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(HipHopSubgenre.allCases) { sub in
+                            ForEach(family.subgenres) { sub in
                                 let isSelected = (sub == activeSubgenre)
                                 Button {
-                                    vm.selectedSection = .hipHop(sub)
+                                    vm.selectedSection = .style(sub)
                                 } label: {
                                     HStack(spacing: 5) {
                                         Text(sub.icon)
@@ -507,13 +467,8 @@ struct MainWindowView: View {
             .frame(maxWidth: 420)
 
             if vm.selectedSection == .favorites {
-                Button(
-                    l10n.t(
-                        "Ripristina Radio Predefinite (Rap, Ucraina & NYC)",
-                        "Restore Default Presets (Rap, Ukraine & NYC)"
-                    )
-                ) {
-                    player.restoreDefaultPresets()
+                Button(l10n.t("Aggiungi le radio consigliate per te", "Add stations suggested for you")) {
+                    Task { player.addFavorites(await profile.starterStations()) }
                 }
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 6)
@@ -527,18 +482,12 @@ struct MainWindowView: View {
         switch vm.selectedSection {
         case .favorites:
             return l10n.t("⭐ Le Tue Radio Preferite", "⭐ Your Favorite Stations")
-        case .hipHop(let sub):
+        case .style(let sub):
             return "\(sub.icon) \(sub.title(isEnglish: l10n.isEnglish))"
-        case .ukraine:
-            return l10n.t("🇺🇦 Radio dall'Ucraina", "🇺🇦 Ukrainian Radio Stations")
-        case .newYork:
-            return l10n.t("🗽 Radio da New York City", "🗽 New York City Radio")
+        case .place(let place):
+            return "\(place.flag) \(place.name(isEnglish: l10n.isEnglish))"
         case .worldSearch:
             return l10n.t("🌍 Esplora il Catalogo Mondiale", "🌍 Explore Global Radio Directory")
-        case .country(let nameIT, let nameEN, _, let flag):
-            return "\(flag) \(l10n.isEnglish ? nameEN : nameIT)"
-        case .genre(let nameIT, let nameEN, _, let icon):
-            return "\(icon) \(l10n.isEnglish ? nameEN : nameIT)"
         }
     }
 
@@ -549,34 +498,14 @@ struct MainWindowView: View {
                 "Le tue stazioni salvate (sincronizzate anche nella Menu Bar in alto)",
                 "Your saved stations (synced with the top macOS Menu Bar)"
             )
-        case .hipHop(let sub):
+        case .style(let sub):
             return sub.subtitle(isEnglish: l10n.isEnglish)
-        case .ukraine:
-            return l10n.t(
-                "Stazioni nazionali, news, musica ucraina, rap e radio da Kyiv e Lviv",
-                "National broadcasters, live news, Ukrainian music, rap & stations from Kyiv and Lviv"
-            )
-        case .newYork:
-            return l10n.t(
-                "NYC Hip-Hop (Hot 97, Power 105.1), Public Radio (WNYC, WQXR), Jazz (WBGO) e Indie (WFMU)",
-                "NYC Hip-Hop (Hot 97, Power 105.1), Public Radio (WNYC, WQXR), Jazz (WBGO) & Indie (WFMU)"
-            )
+        case .place(let place):
+            return place.subtitle(isEnglish: l10n.isEnglish)
         case .worldSearch:
             return l10n.t(
                 "Cerca tra oltre 40.000 stazioni in diretta da tutto il mondo (Radio Browser API)",
                 "Search across 40,000+ live radio stations worldwide (Radio Browser API)"
-            )
-        case .country(let nameIT, let nameEN, _, _):
-            let cName = l10n.isEnglish ? nameEN : nameIT
-            return l10n.t(
-                "Le stazioni più ascoltate in diretta da: \(cName)",
-                "Most popular live stations from: \(cName)"
-            )
-        case .genre(let nameIT, let nameEN, _, _):
-            let gName = l10n.isEnglish ? nameEN : nameIT
-            return l10n.t(
-                "Selezione internazionale in diretta per: \(gName)",
-                "International live selection for: \(gName)"
             )
         }
     }
@@ -584,26 +513,19 @@ struct MainWindowView: View {
     private var displayedStations: [RadioStation] {
         let q = vm.searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
+        let base: [RadioStation]
         switch vm.selectedSection {
         case .favorites:
-            if q.isEmpty { return player.favorites }
-            return player.favorites.filter { matchesQuery($0, query: q) }
-        case .hipHop(let sub):
-            let curated = RadioStation.hipHopStations(for: sub)
-            let base = mergeUnique(primary: curated, secondary: vm.remoteStations)
-            if q.isEmpty { return base }
-            return base.filter { matchesQuery($0, query: q) }
-        case .ukraine:
-            let base = mergeUnique(primary: RadioStation.defaultUkrainianStations, secondary: vm.remoteStations)
-            if q.isEmpty { return base }
-            return base.filter { matchesQuery($0, query: q) }
-        case .newYork:
-            let base = mergeUnique(primary: RadioStation.defaultNewYorkStations, secondary: vm.remoteStations)
-            if q.isEmpty { return base }
-            return base.filter { matchesQuery($0, query: q) }
-        case .worldSearch, .country, .genre:
+            base = player.favorites
+        case .style(let sub):
+            base = mergeUnique(primary: sub.curatedStations, secondary: vm.remoteStations)
+        case .place(let place):
+            base = mergeUnique(primary: place.curatedStations, secondary: vm.remoteStations)
+        case .worldSearch:
             return vm.remoteStations
         }
+        if q.isEmpty { return base }
+        return base.filter { matchesQuery($0, query: q) }
     }
 
     private func matchesQuery(_ station: RadioStation, query: String) -> Bool {

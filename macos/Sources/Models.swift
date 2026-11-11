@@ -180,22 +180,16 @@ enum HipHopSubgenre: String, CaseIterable, Hashable, Identifiable {
 
 enum SidebarSection: Hashable, Identifiable {
     case favorites
-    case hipHop(HipHopSubgenre)
-    case ukraine
-    case newYork
+    case style(Subgenre)
+    case place(Place)
     case worldSearch
-    case country(nameIT: String, nameEN: String, code: String, flag: String)
-    case genre(nameIT: String, nameEN: String, tag: String, icon: String)
 
     var id: String {
         switch self {
         case .favorites: return "favorites"
-        case .hipHop(let sub): return "hiphop_\(sub.rawValue)"
-        case .ukraine: return "ukraine"
-        case .newYork: return "newYork"
+        case .style(let sub): return "style_\(sub.id)"
+        case .place(let place): return "place_\(place.id)"
         case .worldSearch: return "worldSearch"
-        case .country(_, _, let code, _): return "country_\(code)"
-        case .genre(_, _, let tag, _): return "genre_\(tag)"
         }
     }
 }

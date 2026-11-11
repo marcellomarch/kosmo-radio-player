@@ -25,6 +25,10 @@ struct KosmoRadioApp: App {
                     updater.checkForUpdates()
                 }
                 .disabled(!updater.canCheckForUpdates)
+
+                Button(l10n.t("Personalizza generi e paesi…", "Personalize Genres & Countries…")) {
+                    ListenerProfile.shared.isOnboardingPresented = true
+                }
             }
         }
 

@@ -5,6 +5,24 @@ import Combine
 @MainActor
 final class MenuBarViewState: ObservableObject {
     @Published var selectedTab: Int = 0
+    /// Radio Browser results for shortcuts without a hand-picked list, by section id.
+    @Published var remote: [String: [RadioStation]] = [:]
+
+    func loadIfNeeded(_ section: SidebarSection) async {
+        guard remote[section.id] == nil else { return }
+        let result: [RadioStation]?
+        switch section {
+        case .style(let sub):
+            result = try? await RadioBrowserService.shared.searchStations(tag: sub.tag, limit: 30)
+        case .place(let place):
+            result = try? await RadioBrowserService.shared.searchStations(
+                countryCode: place.countryCode, state: place.state, limit: 30
+            )
+        default:
+            result = nil
+        }
+        if let result { remote[section.id] = result }
+    }
 }
 
 struct MenuBarView: View {
@@ -12,6 +30,7 @@ struct MenuBarView: View {
     @ObservedObject var l10n = LocalizationManager.shared
     @ObservedObject var updater = AppUpdater.shared
     @StateObject private var uiState = MenuBarViewState()
+    @ObservedObject private var profile = ListenerProfile.shared
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -32,14 +51,17 @@ struct MenuBarView: View {
 
             Divider()
 
-            // Quick Category Picker (with Rap/Hip-Hop tab!)
+            // Quick picker: Favorites + the listener's first genres and places
             Picker("", selection: $uiState.selectedTab) {
                 Text(l10n.t("⭐ Pref.", "⭐ Favs")).tag(0)
-                Text("🎤 Rap").tag(1)
-                Text("🇺🇦 UA").tag(2)
-                Text("🗽 NYC").tag(3)
+                ForEach(Array(shortcuts.enumerated()), id: \.offset) { index, item in
+                    Text(item.label).tag(index + 1)
+                }
             }
             .pickerStyle(.segmented)
+            .task(id: uiState.selectedTab) {
+                if let section = selectedShortcut { await uiState.loadIfNeeded(section) }
+            }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
 
@@ -146,19 +168,34 @@ struct MenuBarView: View {
         .frame(width: 350)
     }
 
-    private var currentTabStations: [RadioStation] {
-        switch uiState.selectedTab {
-        case 0:
-            return player.favorites.isEmpty ? RadioStation.defaultHipHopStations : player.favorites
-        case 1:
-            return RadioStation.defaultHipHopStations
-        case 2:
-            return RadioStation.defaultUkrainianStations
-        case 3:
-            return RadioStation.defaultNewYorkStations
-        default:
-            return player.favorites
+    /// Up to three shortcuts: the first picked genre families, then places.
+    private var shortcuts: [(label: String, section: SidebarSection)] {
+        let genres = profile.families.map { family -> (label: String, section: SidebarSection) in
+            let name = family.title(isEnglish: l10n.isEnglish)
+            let short = name.components(separatedBy: CharacterSet(charactersIn: "&,")).first?
+                .trimmingCharacters(in: .whitespaces) ?? name
+            return ("\(family.icon) \(short)", .style(family.all))
         }
+        let places = profile.places.map { place -> (label: String, section: SidebarSection) in
+            ("\(place.flag) \(place.id == "nyc" ? "NYC" : place.id)", .place(place))
+        }
+        return Array((genres + places).prefix(3))
+    }
+
+    private var selectedShortcut: SidebarSection? {
+        let index = uiState.selectedTab - 1
+        return shortcuts.indices.contains(index) ? shortcuts[index].section : nil
+    }
+
+    private var currentTabStations: [RadioStation] {
+        guard let section = selectedShortcut else { return player.favorites }
+        let curated: [RadioStation]
+        switch section {
+        case .style(let sub): curated = sub.curatedStations
+        case .place(let place): curated = place.curatedStations
+        default: curated = []
+        }
+        return curated.isEmpty ? (uiState.remote[section.id] ?? []) : curated
     }
 
     private var volumeIcon: String {

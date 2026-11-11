@@ -217,23 +217,10 @@ final class RadioPlayerManager: NSObject, ObservableObject {
         play(station)
     }
 
-    func restoreDefaultPresets() {
-        let defaults = [
-            RadioStation.nycEastCoastHipHopStations[0], // Hot 97 NYC
-            RadioStation.nycEastCoastHipHopStations[1], // Power 105.1 NYC
-            RadioStation.oldSchool90sHipHopStations[0], // 90s90s Hip-Hop
-            RadioStation.nycEastCoastHipHopStations[2], // Generations Rap US
-            RadioStation.defaultUkrainianStations[0],   // Українське Радіо
-            RadioStation.defaultNewYorkStations[2],     // WNYC 93.9 FM
-            RadioStation.defaultUkrainianStations[3],   // Radio NV
-            RadioStation.defaultNewYorkStations[4],     // WBGO Jazz 88.3
-            RadioStation.defaultUkrainianStations[5],   // Країна ФМ
-            RadioStation.lofiChillhopStations[0]        // FluxFM Chillhop
-        ]
-        for st in defaults.reversed() {
-            if !isFavorite(st) {
-                favorites.insert(st, at: 0)
-            }
+    /// Adds stations to the top of Favorites, skipping ones already saved.
+    func addFavorites(_ stations: [RadioStation]) {
+        for st in stations.reversed() where !isFavorite(st) {
+            favorites.insert(st, at: 0)
         }
     }
 
@@ -257,18 +244,8 @@ final class RadioPlayerManager: NSObject, ObservableObject {
                 UserDefaults.standard.set(true, forKey: hipHopSeededKey)
             }
         } else {
-            favorites = [
-                RadioStation.nycEastCoastHipHopStations[0], // WQHT Hot 97 NYC
-                RadioStation.nycEastCoastHipHopStations[1], // Power 105.1 NYC
-                RadioStation.oldSchool90sHipHopStations[0], // 90s90s Hip-Hop & Rap
-                RadioStation.nycEastCoastHipHopStations[2], // Generations Rap US
-                RadioStation.defaultUkrainianStations[0],   // Українське Радіо
-                RadioStation.defaultNewYorkStations[2],     // WNYC 93.9 FM
-                RadioStation.defaultUkrainianStations[3],   // Radio NV
-                RadioStation.defaultNewYorkStations[4],     // WBGO Jazz 88.3
-                RadioStation.defaultUkrainianStations[5],   // Країна ФМ
-                RadioStation.lofiChillhopStations[0]        // FluxFM ChillHop
-            ]
+            // First launch: the onboarding fills Favorites from the listener's picks.
+            favorites = []
             UserDefaults.standard.set(true, forKey: hipHopSeededKey)
         }
     }
