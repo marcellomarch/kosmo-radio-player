@@ -4,11 +4,11 @@ import Foundation
 final class RadioBrowserService {
     static let shared = RadioBrowserService()
 
+    // As of 2026-11 fi1/at1/nl1 no longer resolve; "all" is Radio Browser's
+    // round-robin name, so it keeps working as servers come and go.
     private let mirrors = [
         "https://de1.api.radio-browser.info",
-        "https://fi1.api.radio-browser.info",
-        "https://at1.api.radio-browser.info",
-        "https://nl1.api.radio-browser.info"
+        "https://all.api.radio-browser.info"
     ]
 
     private let session: URLSession
@@ -18,7 +18,7 @@ final class RadioBrowserService {
         config.timeoutIntervalForRequest = 8
         config.timeoutIntervalForResource = 14
         config.httpAdditionalHeaders = [
-            "User-Agent": "KosmoRadio/1.3 (https://github.com/marcellomarch/kosmo-radio-player)"
+            "User-Agent": "KosmoRadio/\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1") (https://github.com/marcellomarch/kosmo-radio-player)"
         ]
         self.session = URLSession(configuration: config)
     }

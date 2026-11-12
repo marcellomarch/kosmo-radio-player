@@ -2,3 +2,4 @@ macos/*.app/
 macos/*.dmg
 macos/*.zip
 vendor/
+pwa/dist/

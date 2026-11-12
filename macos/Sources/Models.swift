@@ -225,7 +225,7 @@ extension RadioStation {
         RadioStation(
             id: "hh-generations-us",
             name: "Generations Rap US — Boom Bap & East Coast Underground",
-            streamURL: "http://generationfm-underground.ice.infomaniak.ch/generationfm-underground-high.mp3",
+            streamURL: "https://generationfm-underground.ice.infomaniak.ch/generationfm-underground-high.mp3",
             country: "United States / France",
             countryCode: "US",
             city: "New York / Paris",
@@ -237,7 +237,7 @@ extension RadioStation {
         RadioStation(
             id: "hh-181-thebeat",
             name: "181.FM — The Beat (Hip-Hop & Rap)",
-            streamURL: "http://listen.181fm.com/181-beat_128k.mp3",
+            streamURL: "https://listen.181fm.com/181-beat_128k.mp3",
             country: "United States",
             countryCode: "US",
             city: "USA",
@@ -264,7 +264,7 @@ extension RadioStation {
         RadioStation(
             id: "hh-90s90s-hiphop",
             name: "90s90s Hip-Hop & Rap — Golden Era 90s",
-            streamURL: "http://streams.90s90s.de/hiphop/mp3-192/streams.90s90s.de/",
+            streamURL: "https://streams.90s90s.de/hiphop/mp3-192/streams.90s90s.de/",
             country: "Germany / USA",
             countryCode: "US",
             city: "Golden Era 90s",
@@ -288,7 +288,7 @@ extension RadioStation {
         RadioStation(
             id: "hh-181-oldschool",
             name: "181.FM — Old School Hip-Hop & R&B",
-            streamURL: "http://listen.181fm.com/181-oldschool_128k.mp3",
+            streamURL: "https://listen.181fm.com/181-oldschool_128k.mp3",
             country: "United States",
             countryCode: "US",
             city: "USA",
@@ -408,7 +408,7 @@ extension RadioStation {
         RadioStation(
             id: "hh-fluxfm-chillhop",
             name: "FluxFM ChillHop — Lo-Fi Hip-Hop & Dusty Beats (320k)",
-            streamURL: "http://streams.fluxfm.de/Chillhop/mp3-320",
+            streamURL: "https://streams.fluxfm.de/Chillhop/mp3-320",
             country: "Germany",
             countryCode: "DE",
             city: "Berlin",
@@ -459,7 +459,7 @@ extension RadioStation {
         RadioStation(
             id: "hh-skyrock-paris",
             name: "Skyrock 96.0 FM Paris — Premier sur le Rap",
-            streamURL: "http://icecast.skyrock.net/s/natio_mp3_128k",
+            streamURL: "https://icecast.skyrock.net/s/natio_mp3_128k",
             country: "France",
             countryCode: "FR",
             city: "Paris",
@@ -471,7 +471,7 @@ extension RadioStation {
         RadioStation(
             id: "hh-generations-fr-gold",
             name: "Generations Rap FR Gold — Classic French Hip-Hop",
-            streamURL: "http://gene-wr06.ice.infomaniak.ch/gene-wr06.mp3",
+            streamURL: "https://gene-wr06.ice.infomaniak.ch/gene-wr06.mp3",
             country: "France",
             countryCode: "FR",
             city: "Paris / Marseille",
@@ -531,7 +531,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-ukrainske-radio",
             name: "Українське Радіо (Suspilne)",
-            streamURL: "http://radio.ukr.radio:8000/ur1-mp3",
+            streamURL: "https://radio.ukr.radio/ur1-mp3",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -543,7 +543,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-radio-promin",
             name: "Радіо Промінь (Radio Promin)",
-            streamURL: "http://radio.ukr.radio:8000/ur2-mp3",
+            streamURL: "https://radio.ukr.radio/ur2-mp3",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -555,7 +555,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-radio-kultura",
             name: "Радіо Культура (Radio Kultura)",
-            streamURL: "http://radio.ukr.radio:8000/ur3-mp3",
+            streamURL: "https://radio.ukr.radio/ur3-mp3",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -567,7 +567,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-radio-nv",
             name: "Radio NV (Радіо НВ)",
-            streamURL: "http://91.218.212.84:8000/radionv.mp3",
+            streamURL: "https://online-radio.nv.ua/radionv.mp3",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -579,7 +579,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-hromadske",
             name: "Громадське Радіо (Hromadske Radio)",
-            streamURL: "http://91.218.212.67:8000/stream",
+            streamURL: "https://hromadske.radio/radio_https_upstream",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -591,7 +591,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-kraina-fm",
             name: "Країна ФМ (Kraina FM)",
-            streamURL: "http://185.65.245.34:8000/krainafm128",
+            streamURL: "https://live2.radioec.com.ua/kiev128s.mp3",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -615,7 +615,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-hit-fm",
             name: "Хіт FM Україна (Hit FM)",
-            streamURL: "http://195.95.206.17/HitFM",
+            streamURL: "https://online.hitfm.ua/HitFM",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -639,7 +639,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-lux-fm",
             name: "Люкс FM 103.1 (Lux FM Kyiv)",
-            streamURL: "http://lux.radio.tvstitch.com/kyiv/lux_adv_sd",
+            streamURL: "https://lux.radio.tvstitch.com/kyiv/lux_adv_sd",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -651,7 +651,7 @@ extension RadioStation {
         RadioStation(
             id: "ua-radio-roks",
             name: "Radio ROKS Ukraine",
-            streamURL: "http://online.radioroks.ua/RadioROKS_HD",
+            streamURL: "https://online.radioroks.ua/RadioROKS_HD",
             country: "Ukraine",
             countryCode: "UA",
             city: "Kyiv",
@@ -668,7 +668,7 @@ extension RadioStation {
         RadioStation(
             id: "nyc-wnyc-fm",
             name: "WNYC 93.9 FM — New York Public Radio",
-            streamURL: "http://fm939.wnyc.org/wnycfm.aac",
+            streamURL: "https://fm939.wnyc.org/wnycfm.aac",
             country: "United States",
             countryCode: "US",
             city: "New York City",
@@ -704,7 +704,7 @@ extension RadioStation {
         RadioStation(
             id: "nyc-wfmu",
             name: "WFMU 91.1 FM — Freeform Radio",
-            streamURL: "http://stream0.wfmu.org/freeform-128k",
+            streamURL: "https://stream0.wfmu.org/freeform-128k",
             country: "United States",
             countryCode: "US",
             city: "New York / Jersey City",
@@ -728,7 +728,7 @@ extension RadioStation {
         RadioStation(
             id: "nyc-bloomberg",
             name: "Bloomberg Radio 1130 AM New York",
-            streamURL: "http://29314.live.streamtheworld.com:3690/WBBRNYAAC_SC",
+            streamURL: "https://playerservices.streamtheworld.com/api/livestream-redirect/WBBRAMAAC.aac",
             country: "United States",
             countryCode: "US",
             city: "New York City",

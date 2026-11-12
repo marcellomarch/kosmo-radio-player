@@ -228,7 +228,9 @@ final class RadioPlayerManager: NSObject, ObservableObject {
         if let data = UserDefaults.standard.data(forKey: favoritesKey),
            let decoded = try? JSONDecoder().decode([RadioStation].self, from: data),
            !decoded.isEmpty {
-            favorites = decoded
+            let upgraded = StreamUpgrades.apply(to: decoded)
+            favorites = upgraded.stations
+            if upgraded.changed { saveFavorites() }
             if !UserDefaults.standard.bool(forKey: hipHopSeededKey) {
                 let topRap = [
                     RadioStation.nycEastCoastHipHopStations[0], // WQHT Hot 97 NYC
